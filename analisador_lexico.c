@@ -137,7 +137,7 @@ Token identify(char currentChar, FILE * arq, int state) {
 
         if (in_int != 'e' || in_int != 'E') { // Números que contém erros, como .1. ou .1a
           printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE"));
-          return createTextToken(numero, ERROR, "ERRO");
+          return createToken(in_int, ERROR, "ERRO");
         }
       }
       else { // Números que não começam com . (111.111)
@@ -160,20 +160,53 @@ Token identify(char currentChar, FILE * arq, int state) {
         }
         else if (in_int != 'e' || in_int != 'E') { // Números que contém erros, como 1.1. ou 1.1a
           printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE"));
-          return createTextToken(numero, ERROR, "ERRO");
+          return createToken(in_int, ERROR, "ERRO");
         }
       }
 
-      if (in_int == 'e' || in_int == 'E'){
+      if (in_int == 'e' || in_int == 'E') {
         isInt = 0;
         i++;
         numero[i] = in_int;
+        if (in_int == '.') { // Números que começam com . (e.1)
+          while (isdigit(in_int)) { // parte ddd do e.ddd
+            i++;
+            numero[i] = in_int;
+            in_int = nextChar(in_int, arq);
+          }
 
+          if (in_int != ' ') {
+            printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE"));
+            return createToken(in_int, ERROR, "ERRO");
+          }
+        }
+        else { // Números que não começam com . (e111.111)
+          while (isdigit(in_int)) {
+            i++;
+            numero[i] = in_int; // parte eddddd
+            in_int = nextChar(in_int, arq);
+          }
+
+          if (in_int == '.') {
+            isInt = 0;
+            i++;
+            numero[i] = in_int;
+            in_int = nextChar(in_int, arq);
+            while (isdigit(in_int)) {
+              i++;
+              numero[i] = in_int; // parte eddddd.dddd
+              in_int = nextChar(in_int, arq);
+            }
+          }
+          else if (in_int != 'e' || in_int != 'E') { // Números que contém erros, como e1.1. ou e1.1a
+            printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE"));
+            return createToken(in_int, ERROR, "ERRO");
+          }
+        }
       }
 
       if (isInt) return createTextToken(numero, T_INTEGER, "INTEIRO");
       if (!isInt) return createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE");
-      return createTextToken(numero, ERROR, "ERRO");
     }
 
     case T_STRING: { // string
@@ -241,11 +274,23 @@ Token identify(char currentChar, FILE * arq, int state) {
       char identificador[200];
       int i = 0;
       char atual = currentChar;
-      while (isalnum(atual) || atual == '_') {
-        identificador[i] = atual;
-        atual = nextChar(atual, arq);
-        i++;
+      int flag = 1;
+
+      while (flag) {
+        if(isalnum(atual) || atual == '_') {
+          identificador[i] = atual;
+          atual = nextChar(atual, arq);
+          i++;
+        }
+        else {
+          return createTextToken(identificador, ERROR, "ERRO");
+          flag = 0;
+        }
+        // palavras reservadas
+
       }
+
+      if (flag) return createTextToken(identificador, ID, "IDENTIFICADOR");
     }
 
     default: return createToken(currentChar, ERROR, "ERRO");
