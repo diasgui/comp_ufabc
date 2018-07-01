@@ -89,75 +89,127 @@ void newLine () {
 
 Token identify(char currentChar, FILE * arq, int state) {
   switch(state) {
-    case BEGIN:
+    case BEGIN: {
       switch(currentChar) {
-        case '(': state=O_PAR; return createToken(currentChar, O_PAR, "ABRE_PARENTESIS");
-        case ')': state=C_PAR; return createToken(currentChar, C_PAR, "FECHA_PARENTESIS");
-        case '{': state=O_KEY; return createToken(currentChar, O_KEY, "ABRE_CHAVES");
-        case '}': state=C_KEY; return createToken(currentChar, C_KEY, "FECHA_CHAVES");
-        case ',': state=COMMA; return createToken(currentChar, COMMA, "VIRGULA");
-        case ';': state=SEMICOLON; return createToken(currentChar, SEMICOLON, "PONTO_VIRGULA");
+        case '(': return createToken(currentChar, O_PAR, "ABRE_PARENTESIS");
+        case ')': return createToken(currentChar, C_PAR, "FECHA_PARENTESIS");
+        case '{': return createToken(currentChar, O_KEY, "ABRE_CHAVES");
+        case '}': return createToken(currentChar, C_KEY, "FECHA_CHAVES");
+        case ',': return createToken(currentChar, COMMA, "VIRGULA");
+        case ';': return createToken(currentChar, SEMICOLON, "PONTO_VIRGULA");
         case '>': case '<': return identify(nextChar(currentChar, arq), arq, OP_GT_LT);
         case '=': return identify(nextChar(currentChar, arq), arq, OP_ATTR);
         case '!': return identify(nextChar(currentChar, arq), arq, OP_NOT);
         case '/': return identify(nextChar(currentChar, arq), arq, OP_DIV);
         case '.': return identify(currentChar, arq, T_FLOAT);
+        case '"': return identify(nextChar(currentChar, arq), arq, T_STRING);
         case '\n': newLine(); return identify(nextChar(currentChar, arq), arq, BEGIN);
-        case EOF: ;
+        case EOF: {
           Token t;
           t.tokenType = T_EOF;
           strcpy(t.tokenText, "EOF");
           return t;
-        default:
+        }
+        default: {
          if (isdigit(currentChar)) return identify(currentChar, arq, T_FLOAT);
-         if (isalpha(currentChar)) return identify(currentChar, arq, ID);
+         if (isalpha(currentChar)) return identify(currentChar, arq, T_STRING);
          return createToken(currentChar, ERROR, "ERRO");
+        }
       }
-      break;
+    }
 
-    case T_FLOAT:
+    case T_FLOAT: {
       char in_int = currentChar;
       int i = 0;
       char numero[200];
       int isInt = 1;
+      numero[i] = in_int; // Salva o que recebeu
+      in_int = nextChar(in_int, arq); // Incrementa o char
 
-      if (in_int == '.') {
+      // Aqui só podemos ter duas possibilidades, um ponto ou um número
+      if (in_int == '.') { // Números que começam com . (.1)
         isInt = 0;
-        numero[i] = in_int;
-        in_int = nextChar(in_int, arq);
-        i++;
+        while (isdigit(in_int)) { // parte ddd do .ddd
+          i++;
+          numero[i] = in_int;
+          in_int = nextChar(in_int, arq);
+        }
+
+        if (in_int != 'e' || in_int != 'E') { // Números que contém erros, como .1. ou .1a
+          printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE"));
+          return createTextToken(numero, ERROR, "ERRO");
+        }
+      }
+      else { // Números que não começam com . (111.111)
+        while (isdigit(in_int)) {
+          i++;
+          numero[i] = in_int; // parte ddddd
+          in_int = nextChar(in_int, arq);
+        }
+
+        if (in_int == '.') {
+          isInt = 0;
+          i++;
+          numero[i] = in_int;
+          in_int = nextChar(in_int, arq);
+          while (isdigit(in_int)) {
+            i++;
+            numero[i] = in_int; // parte ddddd.dddd
+            in_int = nextChar(in_int, arq);
+          }
+        }
+        else if (in_int != 'e' || in_int != 'E') { // Números que contém erros, como 1.1. ou 1.1a
+          printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE"));
+          return createTextToken(numero, ERROR, "ERRO");
+        }
       }
 
-      while (in_int != '.' || isdigit(in_int)) {
-        numero[i] = in_int;
-        in_int = nextChar(in_int, arq);
+      if (in_int == 'e' || in_int == 'E'){
+        isInt = 0;
         i++;
+        numero[i] = in_int;
+
       }
 
       if (isInt) return createTextToken(numero, T_INTEGER, "INTEIRO");
       if (!isInt) return createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE");
       return createTextToken(numero, ERROR, "ERRO");
-    case ID:
+    }
 
-    case OP_GT_LT: // Operadores >, <, >= e <=
-      if (currentChar == '=') {
+    case T_STRING: { // string
+      char string[200];
+      char atual = currentChar;
+      int i = 0;
+
+      while(atual != '\n' || atual != '"') {
+        string[i] = atual;
+        atual = nextChar(atual, arq);
+        i++;
+      }
+
+      if (atual == '\n') return createTextToken(string, ERROR, "ERRO");
+      return createTextToken(string, T_STRING, "STRING");
+    }
+
+    case OP_GT_LT: { // Operadores >, <, >= e <=
         char token_text[2];
         token_text[0] = lastChar;
         token_text[1] = currentChar;
         return createTextToken(token_text, OP_GE_LE, "OPERADOR_RELACIONAL");
-      }
       return createToken(lastChar, OP_GT_LT, "OPERADOR_RELACIONAL");
+    }
 
-    case OP_ATTR: // Operadores = e ==
-      if (currentChar == '=') {
+    case OP_ATTR: {// Operadores = e ==
+        if (currentChar == '=') {
         char token_text[2];
         token_text[0] = lastChar;
         token_text[1] = currentChar;
         return createTextToken(token_text, OP_COMP, "OPERADOR_RELACIONAL");
       }
       return createToken(lastChar, OP_ATTR, "ATRIBUICAO");
+    }
 
-    case OP_NOT: // Operadores ! e !=
+    case OP_NOT: {// Operadores ! e !=
       if (currentChar == '=') {
         char token_text[2];
         token_text[0] = lastChar;
@@ -165,22 +217,38 @@ Token identify(char currentChar, FILE * arq, int state) {
         return createTextToken(token_text, OP_DIFF, "OPERADOR_RELACIONAL");
       }
       return createToken(lastChar, ERROR, "ERRO");
-
-    case OP_DIV: // Operador / e //
+    }
+    case OP_DIV: { // Operador / e //
       if (currentChar == '/') return identify(nextChar(currentChar, arq), arq, COMMENT_LINE);
       if (currentChar == '*') return identify(nextChar(currentChar, arq), arq, COMMENT_BLOCK);
       return createToken(lastChar, OP_DIV, "OPERADOR");
+    }
 
-    case COMMENT_LINE: // Comentários de linha
+    case COMMENT_LINE: { // Comentários de linha
       if (currentChar == '\n') {
-        newLine();
         return identify(nextChar(currentChar, arq), arq, BEGIN);
+        newLine();
       }
       return identify(nextChar(currentChar, arq), arq, COMMENT_LINE);
+    }
 
-    case COMMENT_BLOCK: // Comentários de bloco
+    case COMMENT_BLOCK: { // Comentários de bloco
       if (currentChar == '*' && nextChar(currentChar, arq) == '/') return identify(nextChar(currentChar, arq), arq, BEGIN);
       return identify(currentChar, arq, COMMENT_BLOCK);
+    }
+
+    case ID: {
+      char identificador[200];
+      int i = 0;
+      char atual = currentChar;
+      while (isalnum(atual) || atual == '_') {
+        identificador[i] = atual;
+        atual = nextChar(atual, arq);
+        i++;
+      }
+    }
+
+    default: return createToken(currentChar, ERROR, "ERRO");
   }
 }
 
