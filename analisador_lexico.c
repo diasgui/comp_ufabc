@@ -311,10 +311,11 @@ Token identify(char currentChar, FILE * arq, int state) {
             atual = nextChar(atual, arq);
             i++;
           }
-          else {
+          else if (atual != ' ') {
             printToken(createTextToken(identificador, ID, "IDENTIFICADOR"));
             return createToken(atual, ERROR, "ERRO");
           }
+
           // palavras boolean
           if(strcmp(identificador,"true")) return createTextToken(identificador, ID, "BOOL");
           if(strcmp(identificador,"false")) return createTextToken(identificador, ID, "BOOL");
