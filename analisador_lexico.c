@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 #define ERROR = -1
 
 enum lex {
@@ -39,8 +41,8 @@ enum lex {
 } LEXEMAS;
 
 typedef struct TokenStruct {
-	char tokenText[200];
-	int tokenType;
+  char tokenText[200];
+  int tokenType;
   char tokenTypeText[40];
   int tokenLine;
   int tokenCol;
@@ -51,29 +53,29 @@ int col = 0;
 char lastChar;
 
 Token createToken (char text, int type, char typeText[]) {
-	Token t;
-	t.tokenType = type;
+  Token t;
+  t.tokenType = type;
   t.tokenLine = line;
   t.tokenCol = col;
   t.tokenText[0] = text;
   strcpy(t.tokenTypeText, typeText);
-	return t;
+  return t;
 }
 
 Token createTextToken (char text[], int type, char typeText[]) {
-	Token t;
-	t.tokenType = type;
+  Token t;
+  t.tokenType = type;
   t.tokenCol = col;
   t.tokenLine = line;
   strcpy(t.tokenTypeText, typeText);
-	strcpy(t.tokenText, text);
-	return t;
+  strcpy(t.tokenText, text);
+  return t;
 }
 
 char nextChar(char currentChar, FILE *arq) {
-	lastChar = currentChar;
-	col++;
-	return fgetc(arq);
+  lastChar = currentChar;
+  col++;
+  return fgetc(arq);
 }
 
 void printToken (Token t) {
@@ -81,74 +83,81 @@ void printToken (Token t) {
 }
 
 Token identify(char currentChar, FILE * arq, int state) {
-	switch(state) {
-		case BEGIN:
-			switch(currentChar) {
+  switch(state) {
+    case BEGIN:
+      switch(currentChar) {
         case '(': state=O_PAR; return createToken(currentChar, O_PAR, "O_PAR");
         case ')': state=C_PAR; return createToken(currentChar, C_PAR, "C_PAR");
         case '{': state=O_KEY; return createToken(currentChar, O_KEY, "O_KEY");
         case '}': state=C_KEY; return createToken(currentChar, C_KEY, "C_KEY");
         case ',': state=COMMA; return createToken(currentChar, COMMA, "COMMA");
         case ';': state=SEMICOLON; return createToken(currentChar, SEMICOLON, "SEMICOLON");
-				case '>': case '<': return identify(nextChar(currentChar, arq), arq, OP_GT_LT);
-				case '=': return identify(nextChar(currentChar, arq), arq, OP_ATTR);
-				case '!': return identify(nextChar(currentChar, arq), arq, OP_NOT);
-				case EOF: ;
+        case '>': case '<': return identify(nextChar(currentChar, arq), arq, OP_GT_LT);
+        case '=': return identify(nextChar(currentChar, arq), arq, OP_ATTR);
+        case '!': return identify(nextChar(currentChar, arq), arq, OP_NOT);
+        case EOF: ;
           Token t;
           t.tokenType = T_EOF;
           strcpy(t.tokenText, "EOF");
           return t;
-				default:
-				 // outros identificadores
-				 // erro
-				 break;
-			}
-			break;
-		case OP_GT_LT:
-			if (currentChar == '=') {
-				char token_text[2];
-				token_text[0] = lastChar;
-				token_text[1] = currentChar;
+        default:
+         // outros identificadores
+         // erro
+         break;
+      }
+      break;
+    case OP_GT_LT:
+      if (currentChar == '=') {
+        char token_text[2];
+        token_text[0] = lastChar;
+        token_text[1] = currentChar;
         return createTextToken(token_text, OP_GE_LE, "OP_GE_LE");
-			}
+      }
       return createToken(lastChar, OP_GT_LT, "OP_GT_LT");
-		case OP_ATTR:
-			if (currentChar == '=') {
-				char token_text[2];
-				token_text[0] = lastChar;
-				token_text[1] = currentChar;
+    case OP_ATTR:
+      if (currentChar == '=') {
+        char token_text[2];
+        token_text[0] = lastChar;
+        token_text[1] = currentChar;
         return createTextToken(token_text, OP_COMP, "OP_COMP");
-			}
+      }
       return createToken(lastChar, OP_ATTR, "OP_ATTR");
-		case OP_NOT:
-			if (currentChar == '=') {
-				char token_text[2];
-				token_text[0] = lastChar;
-				token_text[1] = currentChar;
+    case OP_NOT:
+      if (currentChar == '=') {
+        char token_text[2];
+        token_text[0] = lastChar;
+        token_text[1] = currentChar;
         return createTextToken(token_text, OP_DIFF, "OP_DIFF");
-			}
+      }
       return createToken(lastChar, OP_NOT, "OP_NOT");
 
-	}
+  }
 }
 
-int main (args) {
-	char file[]="teste.jl";
-	char ch;
-	FILE *arq;
+int main (int argc, char *argv[]) {
+  if (argc <= 1) {
+    printf("%s", "Número inválido de argumentos");
+    exit(1);
+  }
+  char ch;
+  FILE *arq;
 
-	arq=fopen(file, "r");
-	if (arq == NULL) {
-		printf("Não foi possível ler o arquivo\n");
-		return 1;
-	}
+  arq=fopen(argv[1], "r");
+  if (arq == NULL) {
+    printf("Não foi possível ler o arquivo\n");
+    exit(1);
+  }
 
-	Token token;
-	//printf("TOKEN@LEXEMA@LINHA@COLUNA");
-	while((ch=fgetc(arq))!=EOF) {
-		col++;
-	}
+  printf("TOKEN@LEXEMA@LINHA@COLUNA\n"); // Printa o Header
+  Token token;
 
-	fclose(arq);
-	return 0;
+  while((ch=fgetc(arq)) != EOF) {
+    token = identify(ch, arq, BEGIN);
+    printToken(token);
+    printf("%s -> %d (%s)\n", token.tokenText, token.tokenType, token.tokenTypeText);
+    col++;
+  }
+
+  fclose(arq);
+  return 0;
 }
