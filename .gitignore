@@ -81,3 +81,5 @@ $RECYCLE.BIN/
 .vscode/launch.json
 lex.dSYM/
 lex
+.vs/
+.vscode/
