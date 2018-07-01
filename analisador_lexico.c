@@ -24,7 +24,7 @@ enum lex {
  OP_INCR = 40,
  OP_MULT = 36,
  OP_MOD = 36,
- OP_DIV = 36,
+ OP_DIV = 26,
  OP_NOT = 41,
  OP_OR = 36,
  OP_AND = 36,
@@ -34,7 +34,8 @@ enum lex {
  T_FLOAT2 = 7,
  T_EXP = 10,
  T_EXP2 = 43,
- T_EOF = 4896
+ T_EOF = 4896,
+ IGNORE = -1000
 } LEXEMAS;
 
 typedef struct TokenStruct {
