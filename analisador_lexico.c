@@ -76,6 +76,10 @@ char nextChar(char currentChar, FILE *arq) {
 	return fgetc(arq);
 }
 
+void printToken (Token t) {
+  if(t.tokenType != IGNORE) printf("%s@%s@%d@%d\n", t.tokenTypeText, t.tokenText, t.tokenLine, t.tokenCol);
+}
+
 Token identify(char currentChar, FILE * arq, int state) {
 	switch(state) {
 		case BEGIN:
