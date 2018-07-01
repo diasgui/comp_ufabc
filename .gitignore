@@ -78,3 +78,6 @@ $RECYCLE.BIN/
 
 
 # End of https://www.gitignore.io/api/macos,windows,linux,visualstudiocode
+.vscode/launch.json
+lex.dSYM/
+lex
