@@ -47,7 +47,7 @@ typedef struct TokenStruct {
 } Token;
 
 int line = 0;
-int col = 1;
+int col = 0;
 char lastChar;
 
 Token createToken (char text, int type, char typeText[]) {
