@@ -147,11 +147,6 @@ int main (args) {
 	//printf("TOKEN@LEXEMA@LINHA@COLUNA");
 	while((ch=fgetc(arq))!=EOF) {
 		col++;
-		token = identify(ch, arq, BEGIN);
-		// jeito correto de imprimir
-		//printf("%s@%d@%d@%d\n", token.tokenText, token.tokenType, line, col);
-		// print pra controle
-		printf("%s -> %d\n", token.tokenText, token.tokenType);
 	}
 
 	fclose(arq);
