@@ -55,7 +55,7 @@ Token createToken (char text, int type, char typeText[]) {
 	t.tokenType = type;
   t.tokenLine = line;
   t.tokenCol = col;
-	strcpy(t.tokenText, &text);
+  t.tokenText[0] = text;
   strcpy(t.tokenTypeText, typeText);
 	return t;
 }
