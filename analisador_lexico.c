@@ -156,7 +156,7 @@ Token identify(char currentChar, FILE * arq, int state) {
           in_int = nextChar(in_int, arq);
         }
 
-        if (in_int != 'e' || in_int != 'E' || in_int != ' ') { // Números que contém erros, como .1. ou .1a
+        if (in_int != 'e' && in_int != 'E' && in_int != ' ' && (int)in_int != (int)EOF) { // Números que contém erros, como .1. ou .1a
           printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE", -1, col-i));
           return createToken(in_int, ERROR, "ERRO", -1, -1);
         }
@@ -179,7 +179,7 @@ Token identify(char currentChar, FILE * arq, int state) {
             in_int = nextChar(in_int, arq);
           }
         }
-        else if (in_int != 'e' || in_int != 'E' || in_int != ' ' || in_int != '\n') { // Números que contém erros, como 1.1. ou 1.1a
+        else if (in_int != 'e' && in_int != 'E' && in_int != ' ' && in_int != '\n' && (int)in_int != (int)EOF) { // Números que contém erros, como 1.1. ou 1.1a
           printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE", -1, col-i));
           return createToken(in_int, ERROR, "ERRO", -1, -1);
         }
@@ -235,7 +235,7 @@ Token identify(char currentChar, FILE * arq, int state) {
       char atual = currentChar;
       int i = 0;
 
-      while(atual != '\n' || atual != '"') {
+      while(atual != '\n' && atual != '"' && (int)atual != (int)EOF) {
         string[i] = atual;
         atual = nextChar(atual, arq);
         i++;
@@ -314,7 +314,7 @@ Token identify(char currentChar, FILE * arq, int state) {
           else if (atual != ' ') {
             printToken(createTextToken(identificador, ID, "IDENTIFICADOR", -1, col - i));
             return createToken(atual, ERROR, "ERRO", -1, -1);
-          } else flag = 0;
+          }
 
           strcpy(palavra, identificador);
           // palavras boolean
