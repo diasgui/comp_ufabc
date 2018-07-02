@@ -80,8 +80,7 @@ char nextChar(char currentChar, FILE *arq) {
 }
 
 void printToken (Token t) {
-  // if(t.tokenType != IGNORE) printf("%s@%s@%d@%d\n", t.tokenTypeText, t.tokenText, t.tokenLine, t.tokenCol);
-  if(t.tokenType != IGNORE) printf("Tok: %s Lex: %s Lin: %d Col: %d\n", t.tokenTypeText, t.tokenText, t.tokenLine, t.tokenCol);
+  if(t.tokenType != IGNORE) printf("%s@%s@%d@%d\n", t.tokenTypeText, t.tokenText, t.tokenLine, t.tokenCol);
 }
 
 void newLine () {
@@ -157,8 +156,9 @@ Token identify(char currentChar, FILE * arq, int state) {
         }
 
         if (in_int != 'e' && in_int != 'E' && in_int != ' ' && (int)in_int != (int)EOF) { // Números que contém erros, como .1. ou .1a
-          printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE", -1, col-i));
-          return createToken(in_int, ERROR, "ERRO", -1, -1);
+          int type = isInt ? T_INTEGER : T_FLOAT;
+          printToken(createTextToken(numero, type, isInt ? "INTEIRO" : "PONTO_FLUTUANTE", -1, col-i));
+          return identify(in_int, arq, BEGIN);
         }
       }
       else { // Números que não começam com . (111.111)
@@ -180,8 +180,9 @@ Token identify(char currentChar, FILE * arq, int state) {
           }
         }
         else if (in_int != 'e' && in_int != 'E' && in_int != ' ' && in_int != '\n' && (int)in_int != (int)EOF) { // Números que contém erros, como 1.1. ou 1.1a
-          printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE", -1, col-i));
-          return createToken(in_int, ERROR, "ERRO", -1, -1);
+          int type = isInt ? T_INTEGER : T_FLOAT;
+          printToken(createTextToken(numero, type, isInt ? "INTEIRO" : "PONTO_FLUTUANTE", -1, col-i));
+          return identify(in_int, arq, BEGIN);
         }
       }
 
@@ -197,8 +198,9 @@ Token identify(char currentChar, FILE * arq, int state) {
           }
 
           if (in_int != ' ') {
-            printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE", -1, col-i));
-            return createToken(in_int, ERROR, "ERRO", -1, -1);
+            int type = isInt ? T_INTEGER : T_FLOAT;
+            printToken(createTextToken(numero, type, isInt ? "INTEIRO" : "PONTO_FLUTUANTE", -1, col-i));
+            return identify(in_int, arq, BEGIN);
           }
         }
         else { // Números que não começam com . (e111.111)
@@ -220,8 +222,9 @@ Token identify(char currentChar, FILE * arq, int state) {
             }
           }
           else if (in_int != ' ') { // Números que contém erros, como e1.1. ou e1.1a
-            printToken(createTextToken(numero, T_FLOAT, "PONTO_FLUTUANTE", -1, col-i));
-            return createToken(in_int, ERROR, "ERRO", -1, -1);
+            int type = isInt ? T_INTEGER : T_FLOAT;
+            printToken(createTextToken(numero, type, isInt ? "INTEIRO" : "PONTO_FLUTUANTE", -1, col-i));
+            return identify(in_int, arq, BEGIN);
           }
         }
       }
@@ -298,9 +301,10 @@ Token identify(char currentChar, FILE * arq, int state) {
       int i = 0;
       char atual = currentChar;
       int flag = 1;
+      int isReserved = 0;
       char palavra[20] = {'\0'};
 
-      while (flag && (int)atual != (int)EOF) {
+      while (flag && (int)atual != (int)EOF && atual != ' ') {
         if(isalpha(atual)) { // primeiro digito do identificador como letra
           identificador[i] = atual;
           i++;
@@ -313,22 +317,25 @@ Token identify(char currentChar, FILE * arq, int state) {
           }
           else if (atual != ' ') {
             printToken(createTextToken(identificador, ID, "IDENTIFICADOR", -1, col - i));
-            return createToken(atual, ERROR, "ERRO", -1, -1);
+            return identify(atual, arq, BEGIN);
           }
 
           strcpy(palavra, identificador);
           // palavras boolean
-          if(strcmp(palavra,"true") == 0) return createTextToken(identificador, ID, "BOOL", -1, col-i);
-          if(strcmp(palavra,"false") == 0) return createTextToken(identificador, ID, "BOOL", -1, col-i);
+          if(strcmp(palavra,"true") == 0) { isReserved = 1; return createTextToken(identificador, ID, "BOOL", -1, col-i); }
+          if(strcmp(palavra,"false") == 0) { isReserved = 1; return createTextToken(identificador, ID, "BOOL", -1, col-i); }
           // palavras reservadas
-          if(strcmp(palavra,"while") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
-          if(strcmp(palavra,"if") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
-          if(strcmp(palavra,"else") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
-          if(strcmp(palavra,"return") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
-          if(strcmp(palavra,"int") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
-          if(strcmp(palavra,"bool") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
-          if(strcmp(palavra,"double") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
-          if(strcmp(palavra,"void") == 0) return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i);
+          if(strcmp(palavra,"while") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+          if(strcmp(palavra,"if") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+          if(strcmp(palavra,"else") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+          if(strcmp(palavra,"return") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+          if(strcmp(palavra,"int") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+          if(strcmp(palavra,"bool") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+          if(strcmp(palavra,"double") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+          if(strcmp(palavra,"void") == 0) { isReserved = 1; return createTextToken(identificador, ID, "PALAVRA_RESERVADA", -1, col-i); }
+        } else {
+          printToken(createTextToken(identificador, ID, isReserved ? "PALAVRA_RESERVADA" : "IDENTIFICADOR", -1, col-i));
+          return identify(atual, arq, BEGIN);
         }
       }
 
