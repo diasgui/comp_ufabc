@@ -16,6 +16,10 @@
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
+sintatico/sint
+sintatico/sint.dSYM
+*.ttl
+
 ### macOS ###
 # General
 .DS_Store

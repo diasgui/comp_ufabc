@@ -1,5 +1,6 @@
 Gramática LL(1) ANALISADOR SINTATICO TOP:
 https://sourceforge.net/projects/jsmachines/?source=typ_redirect
+
 Tokens:
 PALAVRA_RESERVADA:
     PR_WHILE, PR_IF, PR_ELSE, PR_RETURN, PR_INT, PR_BOOL, PR_DOUBLE, PR_VOid;
@@ -15,16 +16,16 @@ STRING:
 
 T_BOOL:
     B_TRUE, B_FALSE;
-    
+
 idENTIFICADOR:
     id;
-    
+
 PONTO_VIRGULA:
     P_VIRGULA;
-    
+
 ABRE_PARENTESES:
     A_PAR;
-    
+
 FECHA_PARENTESES;
     F_PAR;
 
@@ -41,59 +42,51 @@ ATRIBUICAO:
     ATTR;
 
 OPERADOR:
-    OP_BOOL, OP_NUM; 
-    
+    OP_BOOL, OP_NUM;
+
 OPERADOR_RELACIONAL:
     OPR_NUM, OP_id;
 
 INCREMENT:
-    IN_id;   
+    IN_id;
 
 Gramática:
 
-T_FUNC      -> void id(PARAM) { PROGRAM } 
-T_FUNC      -> T_NUM id(PARAM) { PROGRAM } 
-T_FUNC      -> PR_BOOL id(PARAM) { PROGRAM } 
-T_FUNC      -> '' 
-PROGRAM     -> INSTRUCAO 
-PROGRAM     -> '';
-INSTRUCAO   -> SENTENCA 
-INSTRUCAO   -> INSTRUCAO2;
-INSTRUCAO2  -> INSTRUCAO 
-INSTRUCAO2  -> '';
-SENTENCA    -> INSTRUCAO
-SENTENCA    -> if (COND) { INSTRUCAO } 
-SENTENCA    -> if (COND) { INSTRUCAO } T_ELSE 
-SENTENCA    -> while (COND) { INSTRUCAO }
-COND        -> id 
-COND        -> INT
-COND 		-> ATTR
-COND        -> BOOL 
-COND        -> id OP_BOOL id COND2
-COND2       -> OP_BOOL COND 
-COND2       -> ''
-ATTR        -> id OP_REL id 
-ATTR        -> id OP_REL INT 
-ATTR        -> INT OP_REL id 
-ATTR        -> INT OP_REL INT
-ATTR		-> id INCREMENT
-SENTENCA    -> T_NUM id; 
-SENTENCA    -> T_NUM id OP_IGUAL INT; 
-SENTENCA    -> T_NUM id OP_IGUAL FLOAT; 
-SENTENCA    -> boolean id; 
-SENTENCA    -> boolean id OP_IGUAL T_BOOL;
-T_NUM       -> int 
-T_NUM       -> double
-T_BOOL      -> true 
-T_BOOL      -> false
-T_ELSE      -> else { INSTRUCAO }
-SENTENCA    -> return COND; 
-SENTENCA    -> return EXP_MATH; 
-SENTENCA    -> return INCREMENT;
-PARAM       -> T_NUM id PARAM2 
-PARAM       -> PR_BOOL id PARAM2
-PARAM2      -> , PARAM 
+T_FUNC      -> void id(PARAM) { INSTRUCAO }
+T_FUNC      -> T_NUM id(PARAM) { INSTRUCAO }
+T_FUNC      -> PR_BOOL id(PARAM) { INSTRUCAO }
+T_FUNC      -> ''
+PARAM       -> (PR_INT | PR_DOUBLE | PR_BOOL) id PARAM2
+PARAM       -> ''
+PARAM2      -> , PARAM3
 PARAM2      -> ''
+PARAM3      -> (PR_INT | PR_DOUBLE | PR_BOOL) id PARAM2
+INSTRUCAO   -> SENTENCA
+INSTRUCAO   -> INSTRUCAO2
+INSTRUCAO2  -> INSTRUCAO INSTRUCAO
+INSTRUCAO2  -> '';
+else if(PR_IF || PR_WHILE || PR_INT || PR_DOUBLE || PR_BOOL ||
+SENTENCA    -> if (COND) { INSTRUCAO }
+SENTENCA    -> if (COND) { INSTRUCAO } PR_ELSE { INSTRUCAO }
+SENTENCA    -> while (COND) { INSTRUCAO }
+SENTENCA    -> (PR_INT | PR_DOUBLE | PR_BOOL) id;
+SENTENCA    -> (PR_INT | PR_DOUBLE) id OP_IGUAL INT;
+SENTENCA    -> (PR_INT | PR_DOUBLE) id OP_IGUAL FLOAT;
+SENTENCA    -> PR_BOOL id OP_IGUAL T_BOOL;
+SENTENCA    -> ATTR;
 SENTENCA    -> INCREMENT;
-INCREMENT   -> IN_id id; 
-INCREMENT   -> id IN_id;
+SENTENCA    -> return (COND | EXP_MATH | INCREMENT);
+COND        -> id
+COND        -> INT
+COND 	    -> ATTR
+COND        -> BOOL
+COND        -> id OP_BOOL id COND2
+COND2       -> OP_BOOL COND
+COND2       -> ''
+ATTR        -> id OP_IGUAL (id | INT) ATTR2
+ATTR        -> INCREMENT;
+ATTR2       -> OP_NUM (id | INT) ATTR3
+ATTR2       -> '';
+ATTR3       -> ATTR2
+INCREMENT   -> IN_ID id
+INCREMENT   -> id IN_ID
