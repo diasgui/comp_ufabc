@@ -66,15 +66,17 @@ SENTENCA    -> if (COND) { INSTRUCAO }
 SENTENCA    -> if (COND) { INSTRUCAO } T_ELSE 
 SENTENCA    -> while (COND) { INSTRUCAO }
 COND        -> id 
-COND        -> INT 
-COND        -> id OP_REL id 
-COND        -> id OP_REL INT 
-COND        -> INT OP_REL id 
-COND        -> INT OP_REL INT 
+COND        -> INT
+COND 		-> ATTR
 COND        -> BOOL 
 COND        -> id OP_BOOL id COND2
 COND2       -> OP_BOOL COND 
 COND2       -> ''
+ATTR        -> id OP_REL id 
+ATTR        -> id OP_REL INT 
+ATTR        -> INT OP_REL id 
+ATTR        -> INT OP_REL INT
+ATTR		-> id INCREMENT
 SENTENCA    -> T_NUM id; 
 SENTENCA    -> T_NUM id OP_IGUAL INT; 
 SENTENCA    -> T_NUM id OP_IGUAL FLOAT; 
