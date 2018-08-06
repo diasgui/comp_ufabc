@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
+#include <iostream>
 #include "sintatico.h"
 enum states
 {
@@ -17,8 +18,8 @@ enum states
 } ESTADOS;
 
 char *line = NULL;   // Linha que está sendo lida no momento
-size_t line_len = 0; // Não faço ideia do que seja, mas é parâmetro do getLine
-ssize_t read_line;   // Também não faço ideia do que seja, mas é parâmetro do getLine
+size_t line_len = 0; // parâmetro do getLine
+ssize_t read_line;   // parâmetro do getLine
 int hasError = 0;
 
 Token createTokenFromCurrentLine()
