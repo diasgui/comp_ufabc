@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
-#include <iostream>
+#include <sys/types.h>
 #include "sintatico.h"
+
 enum states
 {
   Q_FUNC,
