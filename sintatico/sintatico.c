@@ -3,25 +3,18 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
-
+#include "sintatico.h"
 enum states
 {
   Q_FUNC,
   Q_PARAM,
   Q_INCR,
-  Q_INSTRUCAO
+  Q_INSTRUCAO,
+  Q_ENDLINE,
+  Q_COND,
+  Q_IF,
+  Q_RETURN
 } ESTADOS;
-
-typedef struct TokenStruct
-{
-  char tokenText[200];     // x
-  char tokenTypeText[200]; // IDENTIFICADOR
-  int tokenLine;
-  int tokenCol;
-} Token;
-
-void IDENTIFICADOR(Token currentToken, int state, FILE *arq);
-void PARAM(Token currentToken, FILE *arq);
 
 char *line = NULL;   // Linha que está sendo lida no momento
 size_t line_len = 0; // Não faço ideia do que seja, mas é parâmetro do getLine
@@ -107,7 +100,7 @@ int ATTR(Token currentToken)
 
 int OP_BOOL(Token currentToken)
 {
-  return strcmp(currentToken.tokenText, "==") == 0 || strcmp(currentToken.tokenText, "||") == 0 || strcmp(currentToken.tokenText, "&&") == 0 || strcmp(currentToken.tokenText, "!") == 0;
+  return strcmp(currentToken.tokenText, "||") == 0 || strcmp(currentToken.tokenText, "&&") == 0 || strcmp(currentToken.tokenText, "!") == 0;
 }
 
 int OP_NUM(Token currentToken)
@@ -117,14 +110,10 @@ int OP_NUM(Token currentToken)
 
 int OP_REL_NUM(Token currentToken)
 {
-  return strcmp(currentToken.tokenText, ">") == 0 || strcmp(currentToken.tokenText, ">=") == 0 || strcmp(currentToken.tokenText, "<") == 0 || strcmp(currentToken.tokenText, "<=") == 0;
+  return strcmp(currentToken.tokenText, ">") == 0 || strcmp(currentToken.tokenText, ">=") == 0 || strcmp(currentToken.tokenText, "<") == 0 || strcmp(currentToken.tokenText, "<=") == 0 || strcmp(currentToken.tokenText, "==") == 0;
 }
 
-int OP_ID(Token currentToken)
-{
-}
-
-int INCR_ID(Token currentToken, FILE *arq)
+int INCR_ID(Token currentToken)
 {
   return strcmp(currentToken.tokenText, "++") == 0 || strcmp(currentToken.tokenText, "--") == 0;
 }
@@ -159,6 +148,51 @@ int FLOAT(Token currentToken)
   return strcmp(currentToken.tokenTypeText, "PONTO_FLUTUANTE") == 0;
 }
 
+int T_BOOL(Token currentToken)
+{
+  return strcmp(currentToken.tokenTypeText, "true") == 0 || strcmp(currentToken.tokenTypeText, "false") == 0;
+}
+
+void COND(Token currentToken, int state, FILE *arq)
+{
+  Token newToken;
+
+  if (INT(currentToken) || T_BOOL(currentToken))
+  {
+    newToken = nextToken(arq);
+    if (OP_REL_NUM(newToken) || OP_BOOL(newToken))
+    {
+      COND(newToken, state, arq);
+    }
+  }
+  else if (INCR_ID(currentToken))
+  {
+    newToken = nextToken(arq);
+    IDENTIFICADOR(newToken, Q_ENDLINE, arq);
+  }
+
+  if (state == Q_IF)
+  {
+    if (F_PARENTESES(currentToken))
+    {
+      newToken = nextToken(arq);
+      if (A_CHAVES(newToken))
+      {
+        newToken = nextToken(arq);
+        INSTRUCAO(newToken, arq);
+      }
+      else
+      {
+        printError(newToken, "Esperado '{'");
+      }
+    }
+  }
+  else
+  {
+    IDENTIFICADOR(newToken, Q_COND, arq); // tratar casos id, id OP_BOOL id COND2
+  }
+}
+
 void INSTRUCAO(Token currentToken, FILE *arq)
 {
   Token newToken;
@@ -172,35 +206,27 @@ void INSTRUCAO(Token currentToken, FILE *arq)
     if (A_PARENTESES(newToken))
     {
       newToken = nextToken(arq);
-      COND(newToken, arq);
+      COND(newToken, Q_IF, arq);
     }
     else
     {
       printError(newToken, "Esperado '('");
     }
   }
-  else if (IDENTIFICADOR(currentToken, Q_INSTRUCAO, arq))
+  else if (INCR_ID(currentToken)) //++id || --id
   {
+    newToken = nextToken(arq); // PONTO_VIRGULA
+    IDENTIFICADOR(newToken, Q_ENDLINE, arq);
   }
-  else if (INCR_ID(currentToken, arq))
+  else if (PR_RETURN(currentToken)) // return
   {
-  }
-  else if (PR_RETURN(currentToken))
-  {
+    newToken = nextToken(arq);
+    IDENTIFICADOR(newToken, Q_RETURN, arq);
   }
   else
   {
+    IDENTIFICADOR(currentToken, Q_INSTRUCAO, arq);
   }
-}
-
-void SENTENCA(Token currentToken, FILE *arq)
-{
-  printf("SENTENCA -> %s\n", currentToken.tokenText);
-}
-
-void COND(Token currentToken, FILE *arq)
-{
-  printf("COND -> %s\n", currentToken.tokenText);
 }
 
 void PARAM(Token currentToken, FILE *arq)
@@ -262,12 +288,46 @@ void IDENTIFICADOR(Token currentToken, int state, FILE *arq)
       }
       break;
     }
-    case Q_INCR:
+    case Q_ENDLINE:
     {
-      return;
+      if (P_VIRGULA(currentToken))
+      {
+        return;
+      }
+      printError(currentToken, "Esperado ';'");
+      break;
+    }
+    case Q_RETURN:
+    {
+      newToken = nextToken(arq);
+      if (P_VIRGULA(currentToken))
+      {
+
+        return;
+      }
+      else
+      {
+        IDENTIFICADOR(newToken, state, arq);
+      }
+    }
+    case Q_INSTRUCAO:
+    {
     }
     default:
     {
+      newToken = nextToken(arq);
+      if (INCR_ID(newToken))
+      {
+        newToken = nextToken(arq);
+        if (P_VIRGULA(newToken))
+        {
+          return;
+        }
+        else
+        {
+          printError(newToken, "Esperado ';'");
+        }
+      }
       return;
     }
     }
