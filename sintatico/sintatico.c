@@ -272,35 +272,35 @@ void IDENTIFICADOR(Token currentToken, int state, FILE *arq)
       }
       else
       {
-        printError(currentToken, "Esperado um '('");
+        printError(newToken, "Esperado um '('");
       }
       break;
     }
     case Q_PARAM:
     {
-      if (VIRGULA(currentToken) || F_PARENTESES(currentToken))
+      if (VIRGULA(newToken) || F_PARENTESES(newToken))
       {
-        PARAM(nextToken(arq), arq);
+        PARAM(newToken, arq);
       }
       else
       {
-        printError(currentToken, "Esperado ',' ou ')'");
+        printError(newToken, "Esperado ',' ou ')'");
       }
       break;
     }
     case Q_ENDLINE:
     {
-      if (P_VIRGULA(currentToken))
+      if (P_VIRGULA(newToken))
       {
         return;
       }
-      printError(currentToken, "Esperado ';'");
+      printError(newToken, "Esperado ';'");
       break;
     }
     case Q_RETURN:
     {
       newToken = nextToken(arq);
-      if (P_VIRGULA(currentToken))
+      if (P_VIRGULA(newToken))
       {
 
         return;
